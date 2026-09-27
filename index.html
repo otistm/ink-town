@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ink Town: plan it, plant it, watch it grow</title>
+<meta name="description" content="A cozy ink-drawn town builder for your phone. Lay roads, build homes and shops, plant gardens, and balance the books as your hamlet grows into a city.">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ink Town">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ink Town">
+<meta property="og:title" content="Ink Town">
+<meta property="og:description" content="Plan it. Plant it. Watch it grow.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,900&family=Figtree:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#fff;--ink:#000;--soft:#5c5c5c;--display:"Fraunces",Georgia,serif;--ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light;box-sizing:border-box}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#fff;--ink:#000;--soft:#5c5c5c}}
+:root[data-theme="dark"]{--paper:#fff;--ink:#000;--soft:#5c5c5c}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font-family:var(--ui)}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0}
+main{position:relative;z-index:1;min-height:100vh;min-height:100dvh;display:grid;place-items:end center;align-content:end;padding:24px 16px calc(env(safe-area-inset-bottom,0px) + 18px)}
+@media (min-aspect-ratio:1/1){main{place-items:center end;align-content:center;padding-right:6vw}}
+.card{width:min(420px,100%);background:var(--paper);border:2.5px solid var(--ink);border-radius:26px;box-shadow:7px 8px 0 var(--ink);padding:28px 24px 22px;text-align:center;
+  animation:in .8s cubic-bezier(.3,.7,.3,1) both .2s}
+@keyframes in{0%{opacity:0;transform:translateY(60px) scale(.8,1.2)}55%{opacity:1;transform:translateY(-8px) scale(1.04,.96)}78%{transform:translateY(2px) scale(.99,1.01)}100%{transform:none}}
+h1{font-family:var(--display);font-style:italic;font-weight:900;font-size:clamp(50px,14vw,74px);line-height:.95;margin:0;letter-spacing:-.01em}
+.tag{font-weight:800;font-size:17px;margin:12px 0 22px}
+.play{display:block;width:100%;background:var(--ink);color:var(--paper);text-decoration:none;border-radius:18px;padding:17px 20px;font-family:var(--display);font-style:italic;font-weight:900;font-size:30px;
+  border:2.5px solid var(--ink);transition:transform .22s cubic-bezier(.34,1.56,.64,1)}
+.play:hover{transform:translateY(-2px)}
+.play:active{transform:scale(1.04,.9)}
+.play:focus-visible{outline:3px solid var(--ink);outline-offset:4px}
+.feats{list-style:none;padding:0;margin:20px 0 4px;display:grid;gap:10px;text-align:left}
+.feats li{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:center;font-weight:600;font-size:14.5px;line-height:1.35}
+.feats svg{width:30px;height:30px}
+.feats b{font-weight:800}
+footer{margin-top:12px;font-size:12px;font-weight:600;color:var(--soft)}
+@media (prefers-reduced-motion:reduce){.card{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="c" aria-hidden="true"></canvas>
+<main>
+  <div class="card">
+    <h1>Ink Town</h1>
+    <p class="tag">Plan it. Plant it. Watch it grow.</p>
+    <a class="play" href="/play/">Play</a>
+    <ul class="feats">
+      <li><svg viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke="#000" stroke-width="2.6" stroke-linejoin="round"><path d="M7 33V17L20 7l13 10v16z" fill="#fff"/><path d="M17 33v-9h6v9" fill="#000"/></g></svg><span><b>Lay roads, build homes,</b> open shops and find everyone a job.</span></li>
+      <li><svg viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-width="2.6" fill="none" stroke-linecap="round"><path d="M20 36V24"/><path d="M20 5c7 0 11 5 11 10s-4 10-11 10S9 20 9 15 13 5 20 5z" fill="#fff"/><path d="M13 36h14"/></g></svg><span><b>Plant trees, gardens and ponds.</b> Happy neighbours make a town grow.</span></li>
+      <li><svg viewBox="0 0 40 40" aria-hidden="true"><g stroke="#000" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="30" height="22" rx="4" fill="#fff"/><path d="M5 17h30"/><path d="M11 25h8"/><circle cx="29" cy="25" r="2.5" fill="#000"/></g></svg><span><b>Mind the money.</b> A starter budget, taxes to set and a bank loan if you need it.</span></li>
+    </ul>
+  </div>
+  <footer>Best on a phone, held upright.</footer>
+</main>
+<script>
+if('serviceWorker' in navigator&&location.protocol==='https:') navigator.serviceWorker.register('/sw.js').catch(()=>{});
+/* ---------- a little ink street filling up with houses behind the card ---------- */
+(()=>{
+  const cv=document.getElementById('c'), ctx=cv.getContext('2d'), TAU=Math.PI*2;
+  const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W=0,H=0,D=1,pat=null,hat=null;
+  function tiles(){
+    const c=document.createElement('canvas'); c.width=c.height=Math.round(110*D); const g=c.getContext('2d'); g.scale(D,D);
+    g.fillStyle='#fff'; g.fillRect(0,0,110,110); g.strokeStyle='#000'; g.globalAlpha=.3; g.lineWidth=1.2; g.lineCap='round';
+    let s=7; const r=()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; };
+    for(let i=0;i<7;i++){ const x=8+r()*94,y=8+r()*94; g.beginPath(); g.moveTo(x-3,y+2); g.lineTo(x-.5,y-3); g.moveTo(x+.5,y-3); g.lineTo(x+3,y+2); g.stroke(); }
+    pat=ctx.createPattern(c,'repeat'); pat.setTransform&&pat.setTransform(new DOMMatrix([1/D,0,0,1/D,0,0]));
+    const h=document.createElement('canvas'); h.width=h.height=Math.round(8*D); const q=h.getContext('2d'); q.scale(D,D); q.strokeStyle='#000'; q.globalAlpha=.55; q.lineWidth=1;
+    q.beginPath(); q.moveTo(-2,10); q.lineTo(10,-2); q.moveTo(-2,2); q.lineTo(2,-2); q.moveTo(6,10); q.lineTo(10,6); q.stroke();
+    hat=ctx.createPattern(h,'repeat'); hat.setTransform&&hat.setTransform(new DOMMatrix([1/D,0,0,1/D,0,0])); }
+  function resize(){ D=Math.min(2,devicePixelRatio||1); W=innerWidth; H=innerHeight; cv.width=W*D; cv.height=H*D; tiles(); }
+  addEventListener('resize',resize); resize();
+  const ease=u=>{ const c=1.9; return 1+(c+1)*Math.pow(u-1,3)+c*Math.pow(u-1,2); };
+  function house(x,y,s,k,t){ // x,y: the front door step; s: size
+    const w=s, hgt=s*(k===2?1.1:.55), roofH=s*.35;
+    ctx.fillStyle=hat; ctx.fillRect(x+w/2,y-hgt*.8,hgt*.5,hgt*.8);
+    ctx.lineWidth=2.2; ctx.strokeStyle='#000'; ctx.lineJoin='round';
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.rect(x-w/2,y-hgt,w,hgt); ctx.fill(); ctx.stroke();
+    if(k===2){ ctx.fillStyle='#000'; for(let r=0;r<3;r++) for(let c=0;c<3;c++) if((r+c)%2) ctx.fillRect(x-w*.36+c*w*.28,y-hgt+8+r*hgt*.26,w*.14,hgt*.12);
+      ctx.beginPath(); ctx.rect(x-w*.36,y-hgt+8,w*.72,hgt*.72); ctx.lineWidth=1.2; ctx.stroke(); ctx.lineWidth=2.2; }
+    else { ctx.beginPath(); ctx.moveTo(x-w/2-3,y-hgt); ctx.lineTo(x,y-hgt-roofH); ctx.lineTo(x+w/2+3,y-hgt); ctx.closePath(); ctx.fillStyle=k?hat:'#fff'; ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.rect(x-w*.32,y-hgt*.7,w*.2,w*.18); ctx.fill(); ctx.stroke(); }
+    if(k===1){ for(let i=0;i<5;i++){ ctx.fillStyle=i%2?'#fff':'#000'; ctx.beginPath(); ctx.rect(x-w/2+i*w/5,y-hgt*.62,w/5,hgt*.2); ctx.fill(); ctx.stroke(); } }
+    ctx.fillStyle='#000'; ctx.fillRect(x+w*.1,y-hgt*.42,w*.18,hgt*.42);
+  }
+  function tree(x,y,r,t,i){ const sw=still?0:Math.sin(t*1.3+i)*r*.05;
+    ctx.fillStyle=hat; ctx.beginPath(); ctx.ellipse(x+r*.3,y,r*.9,r*.35,0,0,TAU); ctx.fill();
+    ctx.lineWidth=2.4; ctx.strokeStyle='#000'; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+sw*.5,y-r); ctx.stroke();
+    ctx.beginPath(); for(let k=0;k<=24;k++){ const a=k/24*TAU+i, rr=r*(k%2?.8:1); const px=x+sw+Math.cos(a)*rr, py=y-r*1.5+Math.sin(a)*rr; k?ctx.lineTo(px,py):ctx.moveTo(px,py); }
+    ctx.closePath(); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=2.2; ctx.stroke(); }
+  let t0=performance.now();
+  function frame(now){
+    const t=still?40:(now-t0)/1000;
+    ctx.setTransform(D,0,0,D,0,0); ctx.fillStyle=pat; ctx.fillRect(0,0,W,H);
+    const land=H>W, top=land?H*.06:H*.2, s=Math.min(W,H)*(land?.12:.1), rowY=[top+s*2.3,top+s*4.9];
+    // two streets, and the houses along them pop up one by one, then the street starts again
+    rowY.forEach((ry,row)=>{
+      ctx.lineCap='butt'; ctx.strokeStyle='#000'; ctx.lineWidth=s*.62+5; ctx.beginPath(); ctx.moveTo(0,ry+s*.45); ctx.lineTo(W,ry+s*.45); ctx.stroke();
+      ctx.strokeStyle='#fff'; ctx.lineWidth=s*.62; ctx.stroke(); ctx.setLineDash([s*.25,s*.3]); ctx.lineDashOffset=row*20; ctx.strokeStyle='rgba(0,0,0,.5)'; ctx.lineWidth=2; ctx.stroke(); ctx.setLineDash([]);
+      const n=Math.ceil(W/(s*1.5))+1, cyc=n*1.1+4, u=(t*.9+row*3)%cyc;
+      for(let i=0;i<n;i++){ const x=s*.8+i*s*1.5, born=i*1.1, a=u-born; if(a<0) continue;
+        const k=Math.min(1,a/.6), sy=ease(k), sx=1+(1-k)*.25*Math.sin(k*Math.PI), fade=u>cyc-1.2?Math.max(0,(cyc-u)/1.2):1;
+        ctx.save(); ctx.globalAlpha=fade; ctx.translate(x,ry); ctx.scale(sx,Math.max(.01,sy)); const kind=(i*7+row*3)%5;
+        if(kind===4) tree(0,-s*.05,s*.32,t,i); else house(0,0,s*.9,kind===3?2:kind===1?1:0,t); ctx.restore(); }
+      // a car pootling along
+      const cx=((t*s*1.4+row*W*.5)%(W+s*2))-s, dir=row?-1:1, px=dir>0?cx:W-cx, py=ry+s*.45+(dir>0?s*.13:-s*.13);
+      ctx.save(); ctx.translate(px,py); ctx.scale(dir,1); ctx.fillStyle='#fff'; ctx.strokeStyle='#000'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.roundRect?ctx.roundRect(-s*.26,-s*.12,s*.52,s*.24,s*.07):ctx.rect(-s*.26,-s*.12,s*.52,s*.24); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#000'; ctx.fillRect(s*.04,-s*.09,s*.1,s*.18); ctx.restore();
+    });
+    if(!still) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

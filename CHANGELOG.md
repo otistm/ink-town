@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0
+- A day now lasts 15 minutes at normal speed (under 4 minutes on the fastest speed), with a long day and a short night: daylight from 5 am to 10:30 pm, about 73% of the day.
+- Night falls in ink: the whole town is cross-hatched, and soft pools of light show from homes with people in them, open shops and workplaces, street lamps and car headlights. Fewer people are out walking, and crickets replace the birdsong.
+- The time shows next to the day at the top ("Day 2 · 7:40 am"), and the little dial shows a sun by day and a moon by night, with the day's progress round its edge. "Good morning" and "Night falls" notes mark the change.
+- Money no longer lands once a day. Taxes trickle in and upkeep goes out every 10 minutes of town time (about every 6 seconds), and new residents keep arriving at the same pace, so the town grows about as fast as before. On the hour, that hour's takings float up over the town hall.
+- Everything is now shown per hour: the figure under your money, the town ledger, upkeep on info cards and the loan ($690 an hour for about 17 hours, $11,500 in all, the same total as before). The ledger's chart shows the last 30 hours.
+- The "Earn $1,000 in a single day" task is now "Make $6,000 an hour" (the same goal, counted per hour).
+
 ## 0.1.0
 - First version of Ink Town. You're the town planner: the county gives you $20,000 and a meadow by a river, with a town hall already built.
 - Build from the dock at the bottom: roads and footpaths, homes, shops, work, gardens and services. Drag to lay roads, paths and hedges, drag out flower beds and ponds, sweep your finger to plant trees, and tap to place buildings. Two fingers move and zoom the map.

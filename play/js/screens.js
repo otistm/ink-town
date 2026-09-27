@@ -26,7 +26,7 @@ function showHome(){
   S.st='home'; hudShow(false); closeSheet(); openCat(null);
   const has=!!T;
   openCard(`<h2 class="logo">Ink Town</h2><p style="margin-bottom:4px">Plan it. Plant it. Watch it grow.</p>
-    ${has?`<div class="towncard"><canvas id="mini"></canvas><div class="tc"><b>${esc(T.name)}</b><small>Day ${T.day} · ${RANKS[T.rank].name} · ${ST.pop.toLocaleString()} people · ${money(T.money)}</small></div></div>
+    ${has?`<div class="towncard"><canvas id="mini"></canvas><div class="tc"><b>${esc(T.name)}</b><small>Day ${T.day} · ${clockText(T.clock)} · ${RANKS[T.rank].name} · ${ST.pop.toLocaleString()} people · ${money(T.money)}</small></div></div>
       <button class="btn" id="hGo" type="button">Keep building</button><button class="btn ghost" id="hNew" type="button">Start a new town</button>`
     :`<p class="note" style="text-align:center;margin:18px 0 !important">You're the new town planner. The county has given you <b>${money(START_MONEY)}</b> and an empty meadow by a river.</p>
       <button class="btn" id="hNew" type="button">Found a town</button>`}
@@ -36,6 +36,7 @@ function showHome(){
       <li>The three little bars at the top show what the town wants next: homes, shops or work.</li>
       <li><b>Trees, gardens, ponds and parks</b> make neighbours happier. Happy towns grow faster. Keep noisy factories away from homes.</li>
       <li>As the town grows, people expect a <b>clinic, school, fire station</b> and more. Services cost upkeep every day, so build them when you need them.</li>
+      <li>A day lasts 15 minutes: a long day and a short night. Taxes trickle in all the time.</li>
       <li>Tap your money to set taxes or take a loan. Tap any building to see how it's doing.</li>
       <li>Drag roads, paths, hedges, flower beds and ponds. Two fingers move and zoom the map.</li>
     </ul></details>
@@ -67,7 +68,7 @@ function showName(){
   $('nameForm').onsubmit=e=>{ e.preventDefault(); audioInit();
     const v=(inp.value||inp.placeholder).replace(/\s+/g,' ').trim().slice(0,22);
     if(!v){ $('nerr').textContent='Give your town a name.'; inp.classList.remove('nope'); void inp.offsetWidth; inp.classList.add('nope'); sfx('nope'); return; }
-    newTown(v); S.cars=[]; S.folk=[]; S.parts=[]; S.floats=[]; S.dayT=0; S.speed=1; centreCam(true);
+    newTown(v); S.cars=[]; S.folk=[]; S.parts=[]; S.floats=[]; S.stepAcc=0; S.speed=1; centreCam(true);
     sfx('rank'); showWelcome(); };
 }
 function showWelcome(){
@@ -75,13 +76,14 @@ function showWelcome(){
     <ul class="why" style="margin:0 0 16px">
       <li class="g">Follow the <b>task</b> at the top left. Each one pays a small reward.</li>
       <li class="g">Pick what to build from the <b>dock</b> at the bottom.</li>
-      <li class="g">Money comes in each day from taxes. Watch the <b>+ a day</b> under your money.</li>
+      <li class="g">Taxes trickle in all day and night. Watch the <b>+ an hour</b> under your money.</li>
+      <li class="g">A day lasts 15 minutes, with a short night. The little dial at the top shows the time.</li>
     </ul><button class="btn" id="wGo" type="button">Let's build</button>`);
   S.st='card'; $('wGo').onclick=()=>{ sfx('open'); backToTown(); openCat('roads'); };
 }
 function showMenu(){
   if(S.st!=='play') return; closeSheet();
-  openCard(`<h2>${esc(T.name)}</h2><p>Day ${T.day} · ${RANKS[T.rank].name} · paused</p>
+  openCard(`<h2>${esc(T.name)}</h2><p>Day ${T.day} · ${clockText(T.clock)} · ${RANKS[T.rank].name} · paused</p>
     <button class="btn" id="mGo" type="button">Keep building</button>
     <button class="btn ghost" id="mLedger" type="button">Town ledger</button>
     <button class="btn ghost" id="mTasks" type="button">Tasks</button>
@@ -97,22 +99,22 @@ function showMenu(){
 function showLedger(still){
   closeSheet(); const st=ST, i=st.inc, o=st.out;
   const rows=[['Residents’ taxes',`${st.pop.toLocaleString()} people`,i.res],['Business taxes',`${st.employed.toLocaleString()} people at work`,i.jobs],['Shop sales',`${st.sales.toLocaleString()} shoppers served`,i.sales],
-    ['Upkeep','roads, parks and services',-o.upkeep]]; if(o.loan) rows.push(['Loan repayment',`${T.loan.left} days left`,-o.loan]);
+    ['Upkeep','roads, parks and services',-o.upkeep]]; if(o.loan) rows.push(['Loan repayment',`about ${Math.ceil(T.loan.left*STEP_HOURS)} hours left`,-o.loan]);
   const h=T.hist.slice(-30), mx=Math.max(20,...h.map(Math.abs));
-  const spark=h.length?`<div class="spark" aria-label="Money made each day, last ${h.length} days">${h.map(v=>`<i><b class="${v<0?'neg':''}" style="${v>=0?`bottom:50%;height:${v/mx*50}%`:`top:50%;height:${-v/mx*50}%`}"></b></i>`).join('')}</div>`:'';
-  const owed=T.loan?T.loan.left*LOAN.perDay:0;
-  openCard(`<h2>Town ledger</h2><p>${esc(T.name)} · Day ${T.day}</p><div class="big">${money(T.money)}</div>
-    <p style="margin-bottom:12px">${sign(st.net)} a day</p>
+  const spark=h.length?`<div class="spark" aria-label="Money made each hour, last ${h.length} hours">${h.map(v=>`<i><b class="${v<0?'neg':''}" style="${v>=0?`bottom:50%;height:${v/mx*50}%`:`top:50%;height:${-v/mx*50}%`}"></b></i>`).join('')}</div>`:'';
+  const owed=T.loan?T.loan.left*LOAN.perStep:0, perHour=LOAN.perStep/STEP_HOURS, hoursOf=n=>Math.ceil(n*STEP_HOURS);
+  openCard(`<h2>Town ledger</h2><p>${esc(T.name)} · Day ${T.day} · ${clockText(T.clock)}</p><div class="big">${money(T.money)}</div>
+    <p style="margin-bottom:12px">${sign(st.net)} an hour</p>
     <div class="board">${rows.map((r,k)=>`<div class="row" style="animation-delay:${.1+k*.05}s"><span>${r[0]}<small>${r[1]}</small></span><b>${sign(Math.round(r[2]))}</b></div>`).join('')}
-    <div class="row tot" style="animation-delay:.4s"><span>Each day<small>paid at the end of every day</small></span><b>${sign(st.net)}</b></div></div>
+    <div class="row tot" style="animation-delay:.4s"><span>Each hour<small>paid a little at a time, day and night</small></span><b>${sign(st.net)}</b></div></div>
     ${spark}
     <h3>Taxes</h3><div class="seg" id="taxSeg">${Object.entries(TAX).map(([k,t])=>`<button type="button" data-k="${k}" class="${T.tax===k?'on':''}">${t.name}<small>${k==='low'?'happier, less money':k==='fair'?'balanced':'more money, grumpier'}</small></button>`).join('')}</div>
     <h3>The bank</h3>
-    ${T.loan?`<p class="note">You owe ${money(owed)}: ${money(LOAN.perDay)} a day for ${T.loan.left} more days.</p><button class="btn ghost" id="lPay" type="button" ${owed>T.money?'disabled':''}>Pay it all off · ${money(owed)}</button>`
-      :`<p class="note">Borrow ${money(LOAN.amount)} now and pay back ${money(LOAN.perDay)} a day for ${LOAN.days} days (${money(LOAN.perDay*LOAN.days)} in all).</p><button class="btn ghost" id="lTake" type="button">Borrow ${money(LOAN.amount)}</button>`}
+    ${T.loan?`<p class="note">You owe ${money(owed)}: ${money(perHour)} an hour for about ${hoursOf(T.loan.left)} more hours.</p><button class="btn ghost" id="lPay" type="button" ${owed>T.money?'disabled':''}>Pay it all off · ${money(owed)}</button>`
+      :`<p class="note">Borrow ${money(LOAN.amount)} now and pay back ${money(perHour)} an hour for about ${hoursOf(LOAN.steps)} hours (${money(LOAN.perStep*LOAN.steps)} in all).</p><button class="btn ghost" id="lTake" type="button">Borrow ${money(LOAN.amount)}</button>`}
     <button class="btn" id="lBack" type="button" style="margin-top:14px">Back to town</button>`,false,still);
   document.querySelectorAll('#taxSeg button').forEach(b=>b.onclick=()=>{ T.tax=b.dataset.k; sfx('tap'); simRefresh(); saveTown(); showLedger(true); });
-  if($('lTake')) $('lTake').onclick=()=>{ T.loan={left:LOAN.days}; T.money+=LOAN.amount; sfx('coin'); simRefresh(); saveTown(); cashPop(); showLedger(true); };
+  if($('lTake')) $('lTake').onclick=()=>{ T.loan={left:LOAN.steps}; T.money+=LOAN.amount; sfx('coin'); simRefresh(); saveTown(); cashPop(); showLedger(true); };
   if($('lPay')) $('lPay').onclick=()=>{ if(owed>T.money) return; T.money-=owed; T.loan=null; sfx('task'); simRefresh(); saveTown(); cashPop(); showLedger(true); };
   $('lBack').onclick=()=>{ sfx('tap'); closeCard(); };
 }

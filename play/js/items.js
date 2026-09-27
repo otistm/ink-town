@@ -7,11 +7,11 @@
    area   — drag a rectangle (flower beds, ponds, clearing land)
    brush  — drag your finger over tiles to scatter them (trees)
    Effects: cap = residents, jobs, serve = shoppers a shop can serve each day, appeal:[strength,radius],
-   noise:[strength,radius], upkeep = cost a day, svc = the need it covers, r = how far it reaches in tiles.
+   noise:[strength,radius], upkeep = cost an hour, svc = the need it covers, r = how far it reaches in tiles.
    flat items are drawn on the ground. nature items are cleared for free when you build over them. */
 const ITEMS=[
   // roads and paths
-  {id:'road',cat:'roads',name:'Road',cost:15,mode:'line',flat:1,upkeep:.1,blurb:'Homes and businesses need a road back to the town hall.',bridge:60},
+  {id:'road',cat:'roads',name:'Road',cost:15,mode:'line',flat:1,upkeep:.6,blurb:'Homes and businesses need a road back to the town hall.',bridge:60},
   {id:'path',cat:'roads',name:'Footpath',cost:4,mode:'line',flat:1,appeal:[1,1],blurb:'A gravel path for strolling. Makes the neighbours a little happier.',bridge:15},
   // homes
   {id:'cottage',cat:'homes',name:'Cottage',cost:300,mode:'single',cap:4,upkeep:0,blurb:'A snug home for 4 people.'},
@@ -35,17 +35,17 @@ const ITEMS=[
   {id:'hedge',cat:'nature',name:'Hedge',cost:15,mode:'line',nature:1,appeal:[1,1],blurb:'Drag a neat hedge line.'},
   {id:'pond',cat:'nature',name:'Pond',cost:120,mode:'area',appeal:[3,2],blurb:'Dig out a pond. People love living near water.'},
   {id:'bench',cat:'nature',name:'Bench',cost:60,mode:'single',nature:1,appeal:[2,2],blurb:'Somewhere to sit and watch the town.'},
-  {id:'park',cat:'nature',name:'Park',cost:900,mode:'single',w:2,h:2,appeal:[10,4],upkeep:3,blurb:'Lawns, trees and a loop path.'},
-  {id:'fountain',cat:'nature',name:'Fountain',cost:600,mode:'single',appeal:[8,3],upkeep:2,rank:1,blurb:'A splashing fountain for a square.'},
+  {id:'park',cat:'nature',name:'Park',cost:900,mode:'single',w:2,h:2,appeal:[10,4],upkeep:18,blurb:'Lawns, trees and a loop path.'},
+  {id:'fountain',cat:'nature',name:'Fountain',cost:600,mode:'single',appeal:[8,3],upkeep:12,rank:1,blurb:'A splashing fountain for a square.'},
   {id:'statue',cat:'nature',name:'Statue',cost:1500,mode:'single',appeal:[12,4],rank:2,blurb:'A statue of the town founder. That is you.'},
-  {id:'bandstand',cat:'nature',name:'Bandstand',cost:3500,mode:'single',w:2,h:2,appeal:[18,5],upkeep:6,rank:3,blurb:'Brass bands on Sundays.'},
+  {id:'bandstand',cat:'nature',name:'Bandstand',cost:3500,mode:'single',w:2,h:2,appeal:[18,5],upkeep:36,rank:3,blurb:'Brass bands on Sundays.'},
   // services
-  {id:'hall',cat:'services',name:'Town hall',cost:0,mode:'single',w:2,h:2,upkeep:10,hidden:1,blurb:'Where the town is run. Every road must lead back here.'},
-  {id:'clinic',cat:'services',name:'Clinic',cost:1800,mode:'single',upkeep:22,svc:'health',r:7,blurb:'Doctors for everyone within 7 tiles.'},
-  {id:'school',cat:'services',name:'School',cost:2600,mode:'single',w:2,h:2,upkeep:28,svc:'school',r:8,rank:1,blurb:'Lessons for every child within 8 tiles.'},
-  {id:'fire',cat:'services',name:'Fire station',cost:1500,mode:'single',upkeep:18,svc:'fire',r:8,rank:1,blurb:'Keeps homes within 8 tiles safe.'},
-  {id:'library',cat:'services',name:'Library',cost:1400,mode:'single',upkeep:12,svc:'books',r:7,rank:2,blurb:'Books for everyone within 7 tiles.'},
-  {id:'police',cat:'services',name:'Police post',cost:1700,mode:'single',upkeep:18,svc:'police',r:8,rank:2,blurb:'Keeps streets within 8 tiles calm.'},
+  {id:'hall',cat:'services',name:'Town hall',cost:0,mode:'single',w:2,h:2,upkeep:60,hidden:1,blurb:'Where the town is run. Every road must lead back here.'},
+  {id:'clinic',cat:'services',name:'Clinic',cost:1800,mode:'single',upkeep:132,svc:'health',r:7,blurb:'Doctors for everyone within 7 tiles.'},
+  {id:'school',cat:'services',name:'School',cost:2600,mode:'single',w:2,h:2,upkeep:168,svc:'school',r:8,rank:1,blurb:'Lessons for every child within 8 tiles.'},
+  {id:'fire',cat:'services',name:'Fire station',cost:1500,mode:'single',upkeep:108,svc:'fire',r:8,rank:1,blurb:'Keeps homes within 8 tiles safe.'},
+  {id:'library',cat:'services',name:'Library',cost:1400,mode:'single',upkeep:72,svc:'books',r:7,rank:2,blurb:'Books for everyone within 7 tiles.'},
+  {id:'police',cat:'services',name:'Police post',cost:1700,mode:'single',upkeep:108,svc:'police',r:8,rank:2,blurb:'Keeps streets within 8 tiles calm.'},
   // clearing
   {id:'clear',cat:'clear',name:'Clear',cost:0,mode:'area',tool:1,blurb:'Drag over anything to knock it down. You get half its price back.'},
 ];
@@ -74,8 +74,8 @@ const NEEDS=[
   {svc:'police',name:'a police post',at:420,bonus:6,miss:8}];
 
 const TAX={low:{name:'Low',mul:.75,hap:6},fair:{name:'Fair',mul:1,hap:0},high:{name:'High',mul:1.35,hap:-9}};
-// one loan at a time: the bank pays out now and takes a little back each day
-const LOAN={amount:10000,days:100,perDay:115};
+// one loan at a time: the bank pays out now and takes a little back every 10 minutes of town time (100 times, about 17 hours)
+const LOAN={amount:10000,steps:100,perStep:115};
 
 /* Tasks guide a new mayor, one at a time, with a small reward each. `done(st)` reads the town's live stats. */
 const TASKS=[
@@ -93,7 +93,7 @@ const TASKS=[
   {id:'happy',text:'Keep 100 people 70% happy',goal:1,val:s=>s.pop>=100&&s.hap>=70?1:0,pay:1500},
   {id:'town',text:'Grow into a town (220 people)',goal:220,val:s=>s.pop,pay:1500},
   {id:'green',text:'Have 60 trees and flower beds',goal:60,val:s=>(s.n.tree||0)+(s.n.flowers||0),pay:1500},
-  {id:'rich',text:'Earn $1,000 in a single day',goal:1,val:s=>s.net>=1000?1:0,pay:3000},
+  {id:'rich',text:'Make $6,000 an hour',goal:1,val:s=>s.net>=6000?1:0,pay:3000},
   {id:'borough',text:'Grow into a borough (600 people)',goal:600,val:s=>s.pop,pay:4000},
   {id:'city',text:'Grow into a city (1,500 people)',goal:1500,val:s=>s.pop,pay:10000}];
 

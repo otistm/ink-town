@@ -30,6 +30,9 @@ function makePatterns(){
   PAT.dots=tile(12,12,g=>{ g.globalAlpha=.5; [[3,3],[9,9]].forEach(([x,y])=>{ g.beginPath(); g.arc(x,y,.9,0,TAU); g.fill(); }); });
   PAT.soil=tile(10,10,g=>{ const r=seeded(4); g.globalAlpha=.55; for(let i=0;i<5;i++){ g.beginPath(); g.arc(1+r()*8,1+r()*8,.7,0,TAU); g.fill(); } });
   PAT.gravel=tile(14,14,g=>{ const r=seeded(5); g.globalAlpha=.4; for(let i=0;i<4;i++){ g.beginPath(); g.arc(2+r()*10,2+r()*10,.7,0,TAU); g.fill(); } });
+  // night: ink cross-hatching laid over the whole map
+  PAT.night=tile(7,7,g=>{ g.lineWidth=1.1; g.beginPath(); g.moveTo(-1,8); g.lineTo(8,-1); g.moveTo(-1,1); g.lineTo(1,-1); g.moveTo(6,8); g.lineTo(8,6);
+    g.moveTo(-1,-1); g.lineTo(8,8); g.moveTo(6,-1); g.lineTo(8,1); g.moveTo(-1,6); g.lineTo(1,8); g.stroke(); },null);
   PAT.lawn=tile(24,24,g=>{ g.lineWidth=1; g.globalAlpha=.25; g.beginPath(); g.moveTo(0,6); g.lineTo(24,6); g.moveTo(0,18); g.lineTo(24,18); g.stroke(); });
 }
 function resize(){

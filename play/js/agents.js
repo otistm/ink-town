@@ -1,7 +1,7 @@
 /* Ink Town: Game state S, and the little lives on the map: cars on the roads, people strolling the paths and
    pavements, dust when things are built or knocked down, smoke from factories, and floating money. */
 "use strict";
-const S={t:0,st:'boot',speed:1,dayT:0,cat:null,tool:null,sel:null,ghost:null,drag:null,parts:[],cars:[],folk:[],floats:[],smokeT:0,spawnT:0};
+const S={t:0,st:'boot',speed:1,stepAcc:0,cat:null,tool:null,sel:null,ghost:null,drag:null,parts:[],cars:[],folk:[],floats:[],smokeT:0,spawnT:0};
 const SPEEDS=[0,1,2,4];
 
 /* ---------- particles ---------- */
@@ -27,7 +27,8 @@ function agentsStep(dt,live){
   // how many cars and walkers the town has, from how many people live here
   if(ST){
     S.spawnT-=dt;
-    const wantCars=Math.min(28,Math.floor(ST.pop/7)), wantFolk=Math.min(34,Math.floor(ST.pop/5)+Math.min(6,ST.n.path?3:0));
+    // fewer people are out walking at night
+    const dk=darkness(T.clock), wantCars=Math.floor(Math.min(28,Math.floor(ST.pop/7))*(1-dk*.5)), wantFolk=Math.floor((Math.min(34,Math.floor(ST.pop/5)+Math.min(6,ST.n.path?3:0)))*(1-dk*.8));
     if(S.spawnT<=0){ S.spawnT=.25;
       if(S.cars.length<wantCars){ const r=spots('road'); if(r.length){ const o=r[Math.floor(Math.random()*r.length)], d=NB[Math.floor(Math.random()*4)]; S.cars.push({x:o.x,y:o.y,dx:d[0],dy:d[1],u:0,v:1.3+Math.random()*.6,a:0,style:Math.floor(Math.random()*3)}); } }
       else if(S.cars.length>wantCars) S.cars.shift();

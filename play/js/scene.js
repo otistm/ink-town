@@ -30,6 +30,20 @@ function bubble(x,y,kind,t){
   else if(kind==='sad'){ P(); circ(x-.06,y-.04,.022); circ(x+.06,y-.04,.022); X.fillStyle='#000'; X.fill(); P(); X.arc(x,y+.1,.07,Math.PI*1.15,Math.PI*1.85); X.lineWidth=ln(1.2); X.stroke(); }
   else if(kind==='staff'){ person(x,y+.1,.9,'#000'); }
 }
+/* Night: the map is cross-hatched in ink, and pools of paper light show through it from lived-in homes,
+   open businesses, street lamps and headlights. */
+function glow(x,y,r,a){ const g=X.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,`rgba(255,255,255,${a})`); g.addColorStop(.55,`rgba(255,255,255,${a*.7})`); g.addColorStop(1,'rgba(255,255,255,0)');
+  X.fillStyle=g; P(); circ(x,y,r); X.fill(); }
+function drawNight(vb,list,t){
+  const k=darkness(T.clock); if(k<=0) return;
+  X.save(); X.globalAlpha=k*.62; X.fillStyle=PAT.night; X.fillRect(vb.x0-2,vb.y0-4,vb.x1-vb.x0+5,vb.y1-vb.y0+7); X.restore();
+  list.forEach(o=>{ const d=IT[o.k]; const lit=o.k==='hall'||(d.cap&&o.pop>0)||((d.jobs||d.svc)&&o.conn)||o.k==='fountain'||o.k==='bandstand';
+    if(!lit) return; const fl=RM?1:.92+.08*Math.sin(t*2+o.id);
+    glow(o.x+d.w/2,o.y+d.h-(TALL[o.k]||.5)*.45,(.55+.25*Math.min(d.w,2))*fl,k*.85); });
+  // a street lamp on every third road tile
+  for(let y=vb.y0;y<=vb.y1;y++) for(let x=vb.x0;x<=vb.x1;x++){ if((x*2+y*3)%5) continue; const o=objAt(x,y); if(o&&o.k==='road'&&ST.reach[idx(x,y)]) glow(x+.5,y+.5,.62,k*.7); }
+  S.cars.forEach(c=>{ const [x,y]=agentPos(c,.18); glow(x+c.dx*.35,y+c.dy*.35,.3,k*.9); });
+}
 function drawGhost(t){
   const g=S.ghost; if(!g) return;
   if(g.tiles){
@@ -84,6 +98,7 @@ function draw(t){
   const list=tallList(vb);
   list.forEach(o=>drawObj(o,t));
   drawParts();
+  drawNight(vb,list,t);
   // status bubbles: no road, unhappy, or short of staff
   if(cam.z>20&&S.st!=='home') list.forEach(o=>{ const d=IT[o.k]; if(!(d.cap||d.jobs||d.svc)) return; if(S.t-(o.born||-9)<1) return;
     const kind=!o.conn?'road':d.cap&&o.pop>0&&o.hap<35?'sad':d.jobs&&ST.fill<.5?'staff':null;

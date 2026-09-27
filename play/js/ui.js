@@ -93,18 +93,22 @@ function hint(text,ms){ clearTimeout(hintTO); const el=$('hint');
 function hintLater(text,ms,id){ clearTimeout(hint2TO); hint2TO=setTimeout(()=>{ if(S.tool===id&&S.st==='play') hint(text,3200); },ms); }
 
 /* ---------- HUD ---------- */
+const SUN='<circle cx="12" cy="12" r="4.2" fill="#fff" stroke="#000" stroke-width="1.8"/><path d="M12 3v2.4M12 18.6V21M3 12h2.4M18.6 12H21M5.6 5.6l1.7 1.7M16.7 16.7l1.7 1.7M5.6 18.4l1.7-1.7M16.7 7.3l1.7-1.7" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>';
+const MOON='<path d="M15.5 4.5a7.5 7.5 0 1 0 4 12.6A6.2 6.2 0 0 1 15.5 4.5z" fill="#fff"/><circle cx="7" cy="6" r=".9" fill="#fff"/><circle cx="18.5" cy="9" r=".7" fill="#fff"/>';
 const SPEED_ICON=['M10 8h4v16h-4zM18 8h4v16h-4z','M11 7l14 9-14 9z','M5 8l11 8-11 8zM16 8l11 8-11 8z','M2 9l9 7-9 7zM11.5 9l9 7-9 7zM21 9l9 7-9 7z'];
 function hudShow(on){ ['top','menuBtn','side','dock'].forEach(id=>$(id).hidden=!on); if(!on) hint(null); $('taskPill').hidden=!on||!TASKS[T&&T.task]; if(!on) closeSheet(); }
 function updHUD(){
   if(!T||!ST) return;
-  setText('tname',T.name); setText('tsub',`Day ${T.day} · ${RANKS[T.rank].name}`);
-  setText('money',money(T.money)); setText('net',`${sign(ST.net)} a day`);
+  setText('tname',T.name); setText('tsub',`Day ${T.day} · ${clockText(T.clock)} · ${RANKS[T.rank].name}`);
+  setText('money',money(T.money)); setText('net',`${sign(ST.net)} an hour`);
   setText('pop',String(ST.pop)); setText('hap',ST.pop?ST.hap+'%':'–');
   const mh=ST.hap>=60?'M6.5 12q3.5 3 7 0':ST.hap>=40?'M6.5 13h7':'M6.5 14q3.5-3 7 0';
   if(txtCache.mouth!==mh){ txtCache.mouth=mh; $('mouth').setAttribute('d',mh); }
   [['dH','homes'],['dS','shops'],['dW','work']].forEach(([id,k])=>{ const v=ST.dem[k], key=id+(v*10|0);
     if(txtCache[id]!==key){ txtCache[id]=key; const h=Math.abs(v)*50; $(id).innerHTML=`<b class="${v<0?'neg':''}" style="${v>=0?`bottom:50%;height:${h}%`:`top:50%;height:${h}%`}"></b>`; } });
-  $('dayArc').style.setProperty('--p',(S.dayT/DAY_SECONDS*100).toFixed(1)+'%');
+  // the dial: a sun by day and a moon by night, with the day's progress round the edge
+  $('dayArc').style.setProperty('--p',(T.clock/24*100).toFixed(1)+'%');
+  const nt=isNight(T.clock); if(txtCache.night!==nt){ txtCache.night=nt; $('dial').classList.toggle('night',nt); $('dialIcon').innerHTML=nt?MOON:SUN; $('dial').setAttribute('aria-label',nt?'Night':'Day'); }
   const cur=RANKS[T.rank], nx=RANKS[T.rank+1];
   setText('rankL',cur.name); setText('rankR',nx?`${nx.name} at ${nx.pop.toLocaleString()}`:'Top rank');
   const f=nx?clamp((ST.pop-cur.pop)/(nx.pop-cur.pop),0,1):1; if(txtCache.rf!==f){ txtCache.rf=f; $('rankFill').style.transform=`scaleX(${f})`; }
@@ -131,12 +135,12 @@ function statusOf(o){
     else { if(ST.fill<.99) out.why.push([-1,'Short of workers: build more homes nearby']); else out.why.push([1,'Fully staffed']);
       if(d.serve) out.why.push(ST.pop>=ST.serve?[1,'Busy with shoppers']:[0,'Quiet: there are more shops than shoppers']);
       if(d.noise) out.why.push([0,`Noisy for homes within ${d.noise[1]} tiles`]); } }
-  else if(d.svc){ out.sub=`Covers homes within ${d.r} tiles · ${money(d.upkeep)} a day`;
+  else if(d.svc){ out.sub=`Covers homes within ${d.r} tiles · ${money(d.upkeep)} an hour`;
     out.why.push(o.conn?[1,'Open and running']:[-1,'No road to the town hall, so it can’t open']);
     const n=NEEDS.find(n=>n.svc===d.svc); if(n) out.why.push([0,`Residents start to expect ${n.name} at ${n.at} people`]); }
   else if(o.k==='hall'){ out.sub=`Day ${T.day} · ${RANKS[T.rank].name} of ${ST.pop} people`; out.why.push([0,'Every road must lead back here']); }
   else if(o.k==='road'){ out.sub=ST.reach[idx(o.x,o.y)]?'Joined to the town hall':'Not joined to the town hall'; out.why.push(ST.reach[idx(o.x,o.y)]?[1,'Buildings beside it can open']:[-1,'Link it to a road from the town hall']); }
-  else { out.sub=d.blurb; if(d.appeal) out.why.push([1,`Cheers up homes within ${d.appeal[1]} tiles`]); if(d.upkeep) out.why.push([0,`Upkeep ${money(d.upkeep)} a day`]); }
+  else { out.sub=d.blurb; if(d.appeal) out.why.push([1,`Cheers up homes within ${d.appeal[1]} tiles`]); if(d.upkeep) out.why.push([0,`Upkeep ${money(d.upkeep)} an hour`]); }
   return out;
 }
 function showSheet(o,quiet){

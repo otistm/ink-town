@@ -2,7 +2,8 @@
 "use strict";
 /* ============================================================
    SAVED PROGRESS (localStorage; never rename these keys or fields)
-   inktown-save: {v:1, name, seed, day, money, tax, loan, rank, task, hist, created, ground, objs:[[k,x,y,pop]]}
+   inktown-save: {v:1, name, seed, day, clock, money, tax, loan, rank, task, hist, created, ground, objs:[[k,x,y,pop]]}
+     clock is the time of day in hours (0 to 24). loan.left counts 10-minute steps. hist is money made in each recent hour.
      ground is one digit per tile (0 grass, 1 river, 2 pond), row by row.
    inktown-meta: {v:1, sound, seen:{tip ids}}
    ============================================================ */
@@ -16,7 +17,7 @@ let T=null;         // the town being played
 const UNDO=[];      // recent build actions, newest last
 
 function blankTown(name,seed){
-  return {v:1,name,seed,day:1,money:START_MONEY,tax:'fair',loan:null,rank:0,task:0,hist:[],created:Date.now(),
+  return {v:1,name,seed,day:1,clock:7,money:START_MONEY,tax:'fair',loan:null,rank:0,task:0,hist:[],created:Date.now(),
     ground:new Uint8Array(N*N),cell:new Int32Array(N*N).fill(-1),objs:new Map(),nextId:1};
 }
 function newTown(name){
@@ -32,14 +33,14 @@ function newTown(name){
 function saveTown(){
   if(!T) return;
   const objs=[]; T.objs.forEach(o=>objs.push(o.pop?[o.k,o.x,o.y,o.pop]:[o.k,o.x,o.y]));
-  store('inktown-save',{v:1,name:T.name,seed:T.seed,day:T.day,money:Math.round(T.money),tax:T.tax,loan:T.loan,rank:T.rank,task:T.task,
+  store('inktown-save',{v:1,name:T.name,seed:T.seed,day:T.day,clock:+T.clock.toFixed(3),money:Math.round(T.money),tax:T.tax,loan:T.loan,rank:T.rank,task:T.task,
     hist:T.hist,created:T.created,ground:Array.from(T.ground).join(''),objs});
 }
 function loadTown(){
   const s=load('inktown-save',null); if(!s||!s.objs||!s.ground) return false;
   try{
     const t=blankTown(s.name||'Inkwell',s.seed||1);
-    Object.assign(t,{day:s.day||1,money:isFinite(s.money)?s.money:START_MONEY,tax:TAX[s.tax]?s.tax:'fair',loan:s.loan||null,
+    Object.assign(t,{day:s.day||1,clock:isFinite(s.clock)?clamp(s.clock,0,23.99):7,money:isFinite(s.money)?s.money:START_MONEY,tax:TAX[s.tax]?s.tax:'fair',loan:s.loan||null,
       rank:s.rank||0,task:s.task||0,hist:Array.isArray(s.hist)?s.hist:[],created:s.created||Date.now()});
     for(let i=0;i<N*N;i++) t.ground[i]=+s.ground[i]||0;
     T=t; s.objs.forEach(([k,x,y,pop])=>{ if(IT[k]){ const o=addObj(k,x,y); if(o){ o.pop=pop||0; o.born=-9; } } });

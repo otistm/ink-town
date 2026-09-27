@@ -1,10 +1,19 @@
 /* Ink Town: How the town lives. Roads connect buildings to the town hall; gardens and water make places nicer;
-   noise makes them worse; services cover the homes around them. Each day people move in or out, businesses
-   hire, taxes come in and upkeep goes out. */
+   noise makes them worse; services cover the homes around them. Every 10 minutes of town time people move in or
+   out, businesses hire, and a slice of the hour's taxes comes in and upkeep goes out. */
 "use strict";
 let ST=null; // live stats, worked out from the town by simRefresh()
+
+/* ---------- the town clock: day and night ---------- */
+const isNight=h=>h>=SUNSET||h<SUNRISE;
+// how dark it is, 0 by day to 1 at night, fading over an hour of dusk and of dawn
+function darkness(h){
+  const dusk=clamp((h-(SUNSET-.25))/1,0,1), dawn=clamp(((SUNRISE+.25)-h)/1,0,1);
+  return h>=12?dusk:dawn;
+}
+function clockText(h){ const hh=Math.floor(h), mm=Math.floor((h-hh)*6)*10, h12=hh%12||12; return `${h12}:${mm<10?'0':''}${mm} ${hh<12?'am':'pm'}`; }
 const WORK_SHARE=.55;       // share of residents who want a job
-const TAX_RES=.9, TAX_JOB=2.5, TAX_SALE=.4; // dollars a day: per resident, per filled job, per shopper served
+const TAX_RES=5.4, TAX_JOB=15, TAX_SALE=2.4; // dollars an hour: per resident, per filled job, per shopper served
 
 // spread a value over the tiles round a footprint, fading with distance
 function spread(map,o,d,val,r){
@@ -75,21 +84,23 @@ function simRefresh(){
     shops:clamp((st.pop-st.serve)/Math.max(20,st.pop*.5),-1,1),
     work:clamp((st.workers-st.jobs)/Math.max(6,st.workers*.4),-1,1)};
   st.dem.homes=clamp(st.dem.homes,-1,1);
-  // 7. the day's money
+  // 7. money per hour
   const m=tax.mul;
   st.inc={res:st.pop*TAX_RES*m*(.5+st.hap/100), jobs:st.employed*TAX_JOB*m, sales:st.sales*TAX_SALE*m};
-  st.out={upkeep:st.upkeep, loan:T.loan?LOAN.perDay:0};
+  st.out={upkeep:st.upkeep, loan:T.loan?LOAN.perStep/STEP_HOURS:0};
   st.income=st.inc.res+st.inc.jobs+st.inc.sales; st.spend=st.out.upkeep+st.out.loan;
   st.net=Math.round(st.income-st.spend);
   ST=st; return st;
 }
 
-/* one day passes */
-function dayTick(){
+/* 10 minutes of town time pass: a slice of the hour's money, and people move in or out */
+function stepTick(){
   simRefresh();
-  const st=ST, rep={day:T.day,net:st.net,moved:[]};
-  T.money+=st.net; T.day++;
-  T.hist.push(st.net); if(T.hist.length>30) T.hist.shift();
+  const st=ST, pay=st.net*STEP_HOURS, rep={net:pay,moved:[]};
+  T.money+=pay;
+  // the ledger's little chart keeps one bar for each of the last 30 hours
+  T.hourAcc=(T.hourAcc||0)+pay; T.hourN=(T.hourN||0)+1;
+  if(T.hourN>=Math.round(1/STEP_HOURS)){ T.hist.push(Math.round(T.hourAcc)); if(T.hist.length>30) T.hist.shift(); rep.hour=T.hourAcc; T.hourAcc=0; T.hourN=0; }
   if(T.loan){ T.loan.left--; if(T.loan.left<=0){ T.loan=null; rep.loanDone=true; } }
   // people move in to homes that are connected and pleasant, and drift away from ones that aren't
   st.homes.forEach(o=>{ const d=IT[o.k];

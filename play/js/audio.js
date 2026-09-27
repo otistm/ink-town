@@ -26,10 +26,11 @@ function sfx(k,p=1){
   else if(k==='rank'){ [523,659,784,1047,1319].forEach((f,i)=>tone(f,.3,'triangle',.14,null,i*.11)); }
   else if(k==='movein'){ tone(1046,.05,'sine',.03); }
 }
-// birdsong: a couple of quick chirps every so often while the town is running
+// birdsong by day and crickets by night, every so often while the town is running
 let birdT=6;
 function ambientStep(dt,live){
   if(!AC||!meta.sound||!live) return; birdT-=dt; if(birdT>0) return;
+  if(T&&isNight(T.clock)){ birdT=3+Math.random()*5; for(let i=0;i<4;i++) tone(4200,.03,'sine',.012,null,i*.07); return; }
   birdT=5+Math.random()*9; const f=2200+Math.random()*1400, n=2+Math.floor(Math.random()*3);
   for(let i=0;i<n;i++) tone(f*(1+(i%2)*.12),.07,'sine',.018,f*1.3,i*.11);
 }
